@@ -213,7 +213,8 @@ Até o momento:
 - [x] Similaridade do cosseno;
 - [x] Ranking baseado nas interações do usuário;
 - [x] Influência de pesquisas no ranking;
-- [ ] Implementação dos modelos da API;
+- [x] Implementação dos modelos da API;
+- [x] Implementação dos contratos de Request e Response;
 - [ ] Implementação do serviço de recomendação;
 - [ ] Criação dos endpoints REST;
 - [ ] Integração com o Trocabook;
