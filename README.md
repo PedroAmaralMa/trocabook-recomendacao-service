@@ -1,10 +1,10 @@
-# 📚 Trocabook — Serviço de Recomendação
+# Trocabook — Serviço de Recomendação
 
 Serviço de recomendação desenvolvido para o **Trocabook**, uma plataforma voltada à troca e venda de livros usados.
 
 Este projeto é responsável pela aplicação de técnicas de **mineração de dados** para analisar as interações realizadas pelos usuários e gerar recomendações personalizadas de anúncios de livros disponíveis no Trocabook.
 
-O serviço está sendo desenvolvido em **Python** e será disponibilizado através de uma API utilizando **FastAPI**, permitindo sua integração com os demais componentes do Trocabook.
+O serviço é desenvolvido em **Python** e disponibiliza uma API REST utilizando **FastAPI**, permitindo sua integração com os demais componentes do Trocabook.
 
 ---
 
@@ -89,11 +89,59 @@ Essa abordagem ainda é experimental e poderá ser expandida futuramente para co
 
 ---
 
+## API REST
+
+O serviço disponibiliza um endpoint para geração das recomendações personalizadas.
+
+### Gerar recomendações
+
+```http
+POST /recomendacoes
+```
+
+A requisição recebe:
+
+- `uidUsuario` — identificador do usuário para o qual será gerada a recomendação;
+- `anuncios` — anúncios atualmente disponíveis na plataforma;
+- `interacoes` — histórico de interações utilizado para identificar os interesses do usuário.
+
+Exemplo:
+
+```json
+{
+  "uidUsuario": "U1",
+  "anuncios": [
+    {
+      "id": "A1",
+      "uidLivro": "L1",
+      "uidUsuario": "V1",
+      "titulo": "Livro 1",
+      "autores": ["Autor A"],
+      "categorias": ["fantasia"],
+      "tipoNegociacao": "TROCA"
+    }
+  ],
+  "interacoes": [
+    {
+      "uidUsuario": "U1",
+      "tipoInteracao": "VISUALIZACAO",
+      "uidLivro": "L1",
+      "uidAnuncio": "A1",
+      "termoPesquisa": null
+    }
+  ]
+}
+```
+
+O processamento da requisição é realizado pelo `RecomendacaoService` e o resultado interno é convertido pelo `RecomendacaoAdapter` para o contrato de resposta da API.
+
+---
+
 ## Resultado da Recomendação
 
 O algoritmo gera um ranking de anúncios ordenado pelo score de recomendação calculado para o usuário.
 
-Cada item retornado pela API será representado por:
+Cada item retornado pela API é representado por:
 
 - `uidAnuncio` — identificador do anúncio recomendado;
 - `score` — pontuação calculada pelo algoritmo.
@@ -165,7 +213,12 @@ trocabook-recomendacao-service/
 │   │   │   ├── __init__.py
 │   │   │   └── recomendacao_response.py
 │   │   │
-│   │   └── __init__.py
+│   │   ├── __init__.py
+│   │   └── recomendacao_controller.py
+│   │
+│   ├── exceptions/
+│   │   ├── __init__.py
+│   │   └── recomendacao_exception.py
 │   │
 │   ├── models/
 │   │   ├── __init__.py
@@ -185,6 +238,7 @@ trocabook-recomendacao-service/
 ├── tests/
 │   ├── __init__.py
 │   ├── test_recomendacao_adapter.py
+│   ├── test_recomendacao_controller.py
 │   └── test_recomendacao_service.py
 │
 ├── test_main.http
@@ -195,22 +249,29 @@ trocabook-recomendacao-service/
 ### Responsabilidades
 
 - `adapters/` — conversão dos resultados internos do algoritmo para os contratos de resposta da API;
-- `controllers/` — endpoints e contratos de entrada e saída da API;
+- `controllers/` — definição dos endpoints REST;
 - `controllers/requests/` — contratos dos dados recebidos pela API;
 - `controllers/responses/` — contratos dos dados retornados pela API;
+- `exceptions/` — exceções específicas utilizadas pelo serviço;
 - `models/` — modelos de domínio utilizados pelo algoritmo;
 - `services/` — regras e algoritmos responsáveis pela geração das recomendações;
 - `notebooks/` — experimentos relacionados à mineração de dados e ao desenvolvimento do algoritmo;
-- `tests/` — testes automatizados do serviço e dos adapters.
+- `tests/` — testes automatizados do serviço, adapter e endpoints da API.
 
 ---
 
 ## Fluxo da Recomendação
 
-O fluxo interno planejado para uma requisição de recomendação é:
+O fluxo interno de uma requisição de recomendação é:
 
 ```text
+POST /recomendacoes
+        │
+        ▼
 RecomendacaoRequest
+        │
+        ▼
+RecomendacaoController
         │
         ▼
 RecomendacaoService
@@ -233,6 +294,45 @@ Resposta JSON
 ```
 
 O uso do adapter permite manter as estruturas utilizadas internamente pelo algoritmo separadas dos contratos expostos pela API.
+
+---
+
+## Logs e Tratamento de Exceções
+
+O serviço utiliza o módulo `logging` do Python para registrar os principais pontos do processamento da recomendação.
+
+São registrados eventos relacionados a:
+
+- início e conclusão da geração das recomendações;
+- conversão dos anúncios e interações;
+- vetorização com TF-IDF;
+- cálculo das similaridades;
+- identificação das interações do usuário;
+- cálculo dos scores;
+- filtros aplicados durante a montagem do ranking;
+- situações em que determinadas informações não estão disponíveis;
+- erros inesperados durante o processamento.
+
+Os níveis de log são utilizados de acordo com a finalidade da informação:
+
+- `INFO` — eventos principais do fluxo e fallbacks relevantes;
+- `WARNING` — ausência de informações que limita ou impede determinada etapa do algoritmo;
+- `DEBUG` — detalhes internos utilizados para rastreabilidade do processamento;
+- `ERROR` — falhas inesperadas registradas durante o processamento.
+
+Falhas inesperadas durante a geração das recomendações são convertidas para `RecomendacaoException`.
+
+O FastAPI possui um handler responsável por tratar essa exceção e retornar uma resposta HTTP controlada:
+
+```json
+{
+  "detail": "Não foi possível gerar as recomendações."
+}
+```
+
+Nesse cenário, a API retorna o status HTTP `500`.
+
+Erros relacionados à validação dos dados da requisição são tratados pelo FastAPI e Pydantic, retornando o status HTTP `422` quando o contrato de entrada é inválido.
 
 ---
 
@@ -276,7 +376,7 @@ Caso não existam informações suficientes de categoria ou autor para realizar 
 
 O serviço possui testes automatizados desenvolvidos utilizando **pytest**.
 
-Atualmente são testados cenários relacionados ao algoritmo de recomendação e à adaptação do resultado para os contratos da API.
+Atualmente são testados o algoritmo de recomendação, o adapter e os endpoints REST da API.
 
 Entre os cenários testados estão:
 
@@ -291,11 +391,22 @@ Entre os cenários testados estão:
 - anúncios sem informações de autor e categoria;
 - recomendação utilizando somente categorias;
 - recomendação utilizando somente autores;
+- tratamento de erros inesperados pelo `RecomendacaoService`;
 - conversão do ranking para `RecomendacaoResponse`;
 - preservação da ordem do ranking durante a conversão;
-- conversão de ranking vazio.
+- conversão de ranking vazio;
+- retorno de recomendações através do endpoint REST;
+- retorno de lista vazia quando não existem anúncios;
+- validação de requisições inválidas com status HTTP `422`;
+- tratamento de falhas internas com status HTTP `500`.
 
-Atualmente, a suíte possui **14 testes automatizados**.
+Atualmente, a suíte possui **19 testes automatizados**.
+
+A execução atual da suíte apresenta:
+
+```text
+19 passed
+```
 
 Para executar todos os testes:
 
@@ -317,7 +428,8 @@ O projeto utiliza:
 - Pydantic;
 - Jupyter Notebook;
 - Uvicorn;
-- Pytest.
+- Pytest;
+- HTTPX2 para suporte aos testes da API com `TestClient`.
 
 ---
 
@@ -375,7 +487,7 @@ uvicorn app.main:app --reload
 
 A aplicação será iniciada localmente na porta `8000`.
 
-Após a implementação dos endpoints, a documentação automática disponibilizada pelo FastAPI poderá ser utilizada para testar as operações da API.
+A documentação automática do FastAPI pode ser utilizada para visualizar e testar os endpoints disponíveis.
 
 ---
 
@@ -447,15 +559,17 @@ Até o momento:
 - [x] Implementação dos contratos de Request e Response;
 - [x] Implementação do serviço de recomendação;
 - [x] Implementação do adapter de recomendação;
+- [x] Implementação de logs para rastreabilidade;
+- [x] Tratamento de exceções do serviço;
+- [x] Criação do endpoint REST de recomendação;
 - [x] Testes automatizados do serviço e do adapter;
-- [ ] Criação dos endpoints REST;
-- [ ] Testes dos endpoints REST;
+- [x] Testes automatizados do endpoint REST;
 - [ ] Integração com o Trocabook;
 - [ ] Validação com dados reais.
 
 ---
 
-## 📚 Projeto Trocabook
+## Projeto Trocabook
 
 O Trocabook é um projeto acadêmico desenvolvido com o objetivo de incentivar a reutilização de livros por meio de uma plataforma que possibilita a troca e venda de livros usados.
 

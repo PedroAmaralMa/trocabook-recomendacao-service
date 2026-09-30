@@ -1,6 +1,9 @@
+import pytest
+
 from app.models.anuncio import Anuncio
 from app.models.interacao import Interacao, TipoInteracao
 from app.services.recomendacao_service import RecomendacaoService
+from app.exceptions.recomendacao_exception import RecomendacaoException
 
 
 def criar_anuncios():
@@ -344,3 +347,39 @@ def test_deve_recomendar_quando_somente_autores_estiverem_disponiveis():
 
     assert not ranking.empty
     assert ranking.iloc[0]["uidLivro"] == "L2"
+
+def test_deve_lancar_recomendacao_exception_quando_ocorrer_erro_inesperado(
+    monkeypatch
+):
+    service = RecomendacaoService()
+
+    anuncios = [
+        Anuncio(
+            id="A1",
+            uidLivro="L1",
+            uidUsuario="V1",
+            titulo="Livro 1",
+            autores=["Autor A"],
+            categorias=["fantasia"],
+            tipoNegociacao="TROCA"
+        )
+    ]
+
+    def simular_erro(*args, **kwargs):
+        raise ValueError("Erro interno simulado")
+
+    monkeypatch.setattr(
+        service,
+        "_converter_anuncios_dataframe",
+        simular_erro
+    )
+
+    with pytest.raises(
+        RecomendacaoException,
+        match="Não foi possível gerar as recomendações."
+    ):
+        service.recomendar(
+            uid_usuario="U1",
+            anuncios=anuncios,
+            interacoes=[]
+        )

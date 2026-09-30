@@ -1,0 +1,119 @@
+# Teste da API do Serviço de Recomendação do Trocabook
+
+### Verificar se a API está funcionando
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+
+### Gerar recomendações para o usuário U1
+
+POST http://127.0.0.1:8000/recomendacoes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "uidUsuario": "U1",
+  "anuncios": [
+    {
+      "id": "A1",
+      "uidLivro": "L1",
+      "uidUsuario": "V1",
+      "titulo": "Harry Potter e a Pedra Filosofal",
+      "autores": [
+        "J. K. Rowling"
+      ],
+      "categorias": [
+        "fantasia",
+        "aventura"
+      ],
+      "tipoNegociacao": "TROCA"
+    },
+    {
+      "id": "A2",
+      "uidLivro": "L2",
+      "uidUsuario": "V2",
+      "titulo": "Harry Potter e a Câmara Secreta",
+      "autores": [
+        "J. K. Rowling"
+      ],
+      "categorias": [
+        "fantasia",
+        "aventura"
+      ],
+      "tipoNegociacao": "VENDA"
+    },
+    {
+      "id": "A3",
+      "uidLivro": "L3",
+      "uidUsuario": "V3",
+      "titulo": "O Hobbit",
+      "autores": [
+        "J. R. R. Tolkien"
+      ],
+      "categorias": [
+        "fantasia",
+        "aventura"
+      ],
+      "tipoNegociacao": "AMBOS"
+    },
+    {
+      "id": "A4",
+      "uidLivro": "L4",
+      "uidUsuario": "V4",
+      "titulo": "Dom Casmurro",
+      "autores": [
+        "Machado de Assis"
+      ],
+      "categorias": [
+        "romance",
+        "literatura brasileira"
+      ],
+      "tipoNegociacao": "TROCA"
+    },
+    {
+      "id": "A5",
+      "uidLivro": "L5",
+      "uidUsuario": "V5",
+      "titulo": "Clean Code",
+      "autores": [
+        "Robert Martin"
+      ],
+      "categorias": [
+        "programacao",
+        "tecnologia"
+      ],
+      "tipoNegociacao": "VENDA"
+    }
+  ],
+  "interacoes": [
+    {
+      "uidUsuario": "U1",
+      "tipoInteracao": "VISUALIZACAO",
+      "uidLivro": "L1",
+      "uidAnuncio": "A1",
+      "termoPesquisa": null
+    },
+    {
+      "uidUsuario": "U1",
+      "tipoInteracao": "INICIO_CONVERSA",
+      "uidLivro": "L1",
+      "uidAnuncio": "A1",
+      "termoPesquisa": null
+    },
+    {
+      "uidUsuario": "U1",
+      "tipoInteracao": "VISUALIZACAO",
+      "uidLivro": "L3",
+      "uidAnuncio": "A3",
+      "termoPesquisa": null
+    },
+    {
+      "uidUsuario": "U1",
+      "tipoInteracao": "PESQUISA",
+      "uidLivro": null,
+      "uidAnuncio": null,
+      "termoPesquisa": "fantasia"
+    }
+  ]
+}
