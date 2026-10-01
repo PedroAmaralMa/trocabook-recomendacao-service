@@ -67,7 +67,18 @@ class RecomendacaoService:
                 .map(self.PESOS_INTERACOES)
             )
 
-            matriz_categorias, vectorizer_categorias = (
+            df_anuncios["conteudo_pesquisa"] = (
+                    df_anuncios["titulo"].fillna("") + " " +
+                    df_anuncios["autores"].fillna("") + " " +
+                    df_anuncios["categorias"].fillna("")
+            )
+
+            matriz_pesquisa, vectorizer_pesquisa = self._vetorizar(
+                df_anuncios["conteudo_pesquisa"],
+                "conteudo de pesquisa"
+            )
+
+            matriz_categorias, _ = (
                 self._vetorizar(
                     df_anuncios["categorias"],
                     "categorias"
@@ -121,8 +132,8 @@ class RecomendacaoService:
             scores_pesquisas = self._calcular_scores_pesquisas(
                 pesquisas,
                 df_anuncios,
-                vectorizer_categorias,
-                matriz_categorias
+                vectorizer_pesquisa,
+                matriz_pesquisa
             )
 
             scores_finais = (
@@ -495,11 +506,11 @@ class RecomendacaoService:
         return scores
 
     def _calcular_scores_pesquisas(
-        self,
-        pesquisas,
-        anuncios,
-        vectorizer_categorias,
-        matriz_categorias
+            self,
+            pesquisas,
+            anuncios,
+            vectorizer_pesquisa,
+            matriz_pesquisa
     ):
         logger.debug(
             "Calculando influência de %d pesquisas "
@@ -512,12 +523,12 @@ class RecomendacaoService:
         )
 
         if (
-            vectorizer_categorias is None
-            or matriz_categorias is None
+                vectorizer_pesquisa is None
+                or matriz_pesquisa is None
         ):
             logger.debug(
                 "Influência das pesquisas ignorada: "
-                "não existe vetorização de categorias."
+                "não existe vetorização do conteúdo de pesquisa."
             )
 
             return scores
@@ -530,8 +541,8 @@ class RecomendacaoService:
             ]
 
             if (
-                pd.isna(termo)
-                or not termo.strip()
+                    pd.isna(termo)
+                    or not termo.strip()
             ):
                 logger.debug(
                     "Pesquisa sem termo válido ignorada."
@@ -540,20 +551,20 @@ class RecomendacaoService:
                 continue
 
             vetor_pesquisa = (
-                vectorizer_categorias
+                vectorizer_pesquisa
                 .transform([termo])
             )
 
             similaridade = (
                 cosine_similarity(
                     vetor_pesquisa,
-                    matriz_categorias
+                    matriz_pesquisa
                 )[0]
             )
 
             scores += (
-                similaridade
-                * pesquisa["peso"]
+                    similaridade
+                    * pesquisa["peso"]
             )
 
             pesquisas_processadas += 1

@@ -383,3 +383,44 @@ def test_deve_lancar_recomendacao_exception_quando_ocorrer_erro_inesperado(
             anuncios=anuncios,
             interacoes=[]
         )
+
+
+def test_pesquisa_por_titulo_deve_influenciar_recomendacao():
+    anuncios = [
+        Anuncio(
+            id="A1",
+            uidLivro="L1",
+            uidUsuario="U2",
+            titulo="Harry Potter e a Pedra Filosofal",
+            autores=["J. K. Rowling"],
+            categorias=["Fantasia"],
+            tipoNegociacao="TROCA"
+        ),
+        Anuncio(
+            id="A2",
+            uidLivro="L2",
+            uidUsuario="U3",
+            titulo="Dom Casmurro",
+            autores=["Machado de Assis"],
+            categorias=["Literatura Brasileira"],
+            tipoNegociacao="TROCA"
+        )
+    ]
+
+    interacoes = [
+        Interacao(
+            uidUsuario="U1",
+            tipoInteracao=TipoInteracao.PESQUISA,
+            termoPesquisa="harry"
+        )
+    ]
+
+    ranking = RecomendacaoService().recomendar(
+        "U1",
+        anuncios,
+        interacoes
+    )
+
+    assert len(ranking) == 1
+    assert ranking.iloc[0]["id"] == "A1"
+    assert ranking.iloc[0]["score"] > 0

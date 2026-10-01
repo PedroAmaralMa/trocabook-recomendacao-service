@@ -1,10 +1,15 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.controllers.recomendacao_controller import router as recomendacao_router
 from app.exceptions.recomendacao_exception import RecomendacaoException
 
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
 app = FastAPI(
     title="Trocabook - Serviço de Recomendação",
     version="1.0.0"
