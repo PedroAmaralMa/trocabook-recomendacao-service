@@ -4,7 +4,7 @@ Serviço de recomendação desenvolvido para o **Trocabook**, uma plataforma vol
 
 Este projeto é responsável pela aplicação de técnicas de **mineração de dados** para analisar as interações realizadas pelos usuários e gerar recomendações personalizadas de anúncios de livros disponíveis no Trocabook.
 
-O serviço é desenvolvido em **Python** e disponibiliza uma API REST utilizando **FastAPI**, permitindo sua integração com os demais componentes do Trocabook.
+O serviço é desenvolvido em **Python** e disponibiliza uma API REST utilizando **FastAPI**, permitindo sua integração com o sistema principal do Trocabook desenvolvido em **Spring Boot**.
 
 ---
 
@@ -26,13 +26,13 @@ Cada interação possui um peso diferente de acordo com o nível de interesse qu
 | Visualização | 1 |
 | Início de conversa | 3 |
 
-Os valores estão sendo avaliados experimentalmente e poderão ser ajustados durante a evolução do sistema e posterior validação com dados reais.
+Os valores foram definidos experimentalmente e poderão ser ajustados durante a evolução do sistema e posterior validação com dados reais.
 
 ---
 
 ## Sistema de Recomendação
 
-A abordagem inicial utiliza recomendação baseada nas características dos livros e no histórico de interações do usuário.
+A abordagem utiliza recomendação baseada nas características dos livros e no histórico de interações do usuário.
 
 O processo segue as seguintes etapas:
 
@@ -41,14 +41,15 @@ O processo segue as seguintes etapas:
 3. Representação textual das características dos livros utilizando **TF-IDF**;
 4. Cálculo da similaridade entre os livros utilizando **similaridade do cosseno**;
 5. Construção do perfil de interesse do usuário;
-6. Cálculo do score de recomendação;
-7. Remoção dos livros com os quais o usuário já interagiu diretamente;
-8. Remoção dos anúncios pertencentes ao próprio usuário;
-9. Ordenação dos anúncios pelo score obtido.
+6. Análise dos termos pesquisados pelo usuário;
+7. Cálculo do score de recomendação;
+8. Remoção dos livros com os quais o usuário já interagiu diretamente;
+9. Remoção dos anúncios pertencentes ao próprio usuário;
+10. Ordenação dos anúncios pelo score obtido.
 
 ### Características dos livros
 
-Nesta etapa inicial são consideradas:
+Para calcular a similaridade de conteúdo entre os livros são consideradas:
 
 - Categorias;
 - Autores.
@@ -69,23 +70,29 @@ Dessa forma:
 - Somente autor disponível: 100% autor;
 - Nenhuma das duas características disponível: não há informação de conteúdo suficiente para gerar similaridade.
 
-Os pesos de categoria e autor são experimentais e serão avaliados posteriormente com dados reais da plataforma.
+Os pesos de categoria e autor são experimentais e poderão ser avaliados posteriormente com dados reais da plataforma.
 
 ---
 
 ## Influência das Pesquisas
 
-As pesquisas também são utilizadas como um sinal de interesse do usuário.
+As pesquisas realizadas no Trocabook também são utilizadas como um sinal de interesse do usuário.
 
-O termo pesquisado é transformado utilizando o mesmo modelo **TF-IDF** aplicado às categorias dos livros.
+Para permitir que a pesquisa influencie livros relacionados a diferentes características, é criada uma representação textual específica para pesquisa combinando:
 
-Em seguida, a similaridade entre o termo pesquisado e as categorias dos anúncios disponíveis é calculada utilizando **similaridade do cosseno**.
+- Título;
+- Autores;
+- Categorias.
 
-O resultado contribui para o score final da recomendação de acordo com o peso definido para a interação de pesquisa.
+O conteúdo textual de cada livro é representado utilizando **TF-IDF**.
 
-Nesta implementação inicial, as pesquisas são comparadas somente com as categorias.
+O termo pesquisado pelo usuário é transformado utilizando o mesmo `TfidfVectorizer` responsável pela representação do conteúdo de pesquisa dos livros.
 
-Essa abordagem ainda é experimental e poderá ser expandida futuramente para considerar outras informações, como título e demais características dos livros.
+Em seguida, é calculada a **similaridade do cosseno** entre o vetor correspondente ao termo pesquisado e a matriz de conteúdo dos livros.
+
+O resultado obtido contribui para o score final da recomendação de acordo com o peso definido para a interação `PESQUISA`.
+
+Essa estratégia permite, por exemplo, que uma pesquisa possa influenciar a recomendação por correspondência com o título, autor ou categoria de um livro.
 
 ---
 
@@ -176,7 +183,7 @@ notebooks/
 └── experimento_recomendacao.ipynb
 ```
 
-O notebook utiliza um conjunto de dados controlado para permitir a análise do comportamento do algoritmo antes de sua integração com os dados reais do Trocabook.
+O notebook utiliza um conjunto de dados controlado para permitir a análise do comportamento do algoritmo antes de sua utilização com os dados da aplicação.
 
 O experimento contempla:
 
@@ -186,11 +193,17 @@ O experimento contempla:
 - vetorização das categorias e autores utilizando TF-IDF;
 - cálculo da similaridade do cosseno;
 - combinação das similaridades de categoria e autor;
-- influência das pesquisas;
+- construção do perfil de interesse do usuário;
+- criação de uma representação textual para pesquisa utilizando título, autores e categorias;
+- influência das pesquisas no score;
 - cálculo dos scores;
-- construção do ranking de recomendação.
+- construção do ranking de recomendação;
+- remoção de livros já utilizados no histórico de interesse;
+- remoção dos anúncios pertencentes ao próprio usuário.
 
-Posteriormente, o algoritmo será avaliado utilizando dados reais coletados pela plataforma.
+O notebook documenta as principais etapas utilizadas na construção e avaliação experimental do algoritmo.
+
+A validação do comportamento do sistema com um volume maior de dados reais da plataforma permanece como uma etapa futura.
 
 ---
 
@@ -344,7 +357,7 @@ O serviço possui tratamentos para situações que podem ocorrer durante o proce
 
 Caso não existam interações suficientes para identificar os interesses do usuário, o serviço retorna um ranking vazio.
 
-Uma estratégia de recomendação para usuários sem histórico poderá ser implementada futuramente.
+No sistema principal do Trocabook, esse cenário pode ser tratado utilizando anúncios aleatórios quando necessário.
 
 ### Ausência de anúncios
 
@@ -353,6 +366,10 @@ Caso nenhum anúncio esteja disponível, o serviço retorna um ranking vazio.
 ### Anúncios do próprio usuário
 
 Anúncios pertencentes ao usuário que está recebendo as recomendações são removidos do ranking.
+
+### Livros já utilizados no histórico de interesse
+
+Livros com os quais o usuário já interagiu diretamente são removidos do ranking final para evitar que o sistema continue recomendando itens que já fizeram parte do histórico utilizado para identificar seus interesses.
 
 ### Livro sem anúncio disponível
 
@@ -364,11 +381,11 @@ Essas interações são ignoradas durante o cálculo, evitando que dados histór
 
 O algoritmo permite que um anúncio não possua uma das características utilizadas na recomendação.
 
-Caso apenas categorias estejam disponíveis, a similaridade é calculada exclusivamente com categorias.
+Caso apenas categorias estejam disponíveis, a similaridade de conteúdo é calculada exclusivamente com categorias.
 
-Caso apenas autores estejam disponíveis, a similaridade é calculada exclusivamente com autores.
+Caso apenas autores estejam disponíveis, a similaridade de conteúdo é calculada exclusivamente com autores.
 
-Caso não existam informações suficientes de categoria ou autor para realizar a vetorização, o serviço retorna um ranking vazio.
+Caso não existam informações suficientes de categoria ou autor para realizar a vetorização necessária, o serviço retorna um ranking vazio.
 
 ---
 
@@ -391,6 +408,7 @@ Entre os cenários testados estão:
 - anúncios sem informações de autor e categoria;
 - recomendação utilizando somente categorias;
 - recomendação utilizando somente autores;
+- influência de pesquisa por título na recomendação;
 - tratamento de erros inesperados pelo `RecomendacaoService`;
 - conversão do ranking para `RecomendacaoResponse`;
 - preservação da ordem do ranking durante a conversão;
@@ -400,12 +418,12 @@ Entre os cenários testados estão:
 - validação de requisições inválidas com status HTTP `422`;
 - tratamento de falhas internas com status HTTP `500`.
 
-Atualmente, a suíte possui **19 testes automatizados**.
+Atualmente, a suíte possui **20 testes automatizados**.
 
 A execução atual da suíte apresenta:
 
 ```text
-19 passed
+20 passed
 ```
 
 Para executar todos os testes:
@@ -482,7 +500,7 @@ pytest -v
 ### 6. Execute a API
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 A aplicação será iniciada localmente na porta `8000`.
@@ -493,12 +511,17 @@ A documentação automática do FastAPI pode ser utilizada para visualizar e tes
 
 ## Integração com o Trocabook
 
-A arquitetura planejada prevê a comunicação entre o sistema principal do Trocabook e este serviço através de uma API REST.
+O serviço de recomendação está integrado ao sistema principal do Trocabook através de uma API REST.
+
+O sistema principal, desenvolvido em **Spring Boot**, permanece responsável pela persistência e recuperação dos dados da aplicação.
+
+O fluxo de integração ocorre da seguinte forma:
 
 ```text
 Trocabook
 (Spring Boot)
      │
+     │ anúncios + interações
      │ REST
      ▼
 Serviço de Recomendação
@@ -506,39 +529,91 @@ Serviço de Recomendação
      │
      ▼
 Processamento das interações
+e características dos livros
      │
      ▼
 Ranking personalizado
      │
      ▼
 uidAnuncio + score
+     │
+     ▼
+Trocabook
+(Spring Boot)
+     │
+     ▼
+Recuperação e ordenação
+dos anúncios
 ```
 
-O **Spring Boot** continuará responsável pelos dados da aplicação.
+O Spring Boot envia ao serviço de recomendação:
 
-O sistema principal enviará ao serviço de recomendação os anúncios disponíveis e as interações necessárias para o processamento.
+- identificador do usuário;
+- anúncios disponíveis;
+- histórico de interações do usuário.
 
-O serviço em Python será responsável por executar o algoritmo de recomendação e retornar o ranking personalizado.
+O serviço Python processa essas informações e retorna apenas o ranking contendo o identificador dos anúncios e seus respectivos scores.
 
-Dessa forma, o serviço de recomendação não precisa acessar diretamente o banco de dados principal do Trocabook.
+Dessa forma, o serviço de recomendação não acessa diretamente o **Firebase**, mantendo a responsabilidade pela persistência no sistema principal.
+
+### Cache das recomendações
+
+Para reduzir chamadas repetidas ao serviço Python e melhorar o desempenho da aplicação, o sistema principal utiliza cache para armazenar temporariamente o ranking de recomendações de cada usuário.
+
+O cache armazena os identificadores dos anúncios e seus respectivos scores, enquanto os dados completos dos anúncios continuam sendo responsabilidade do sistema principal.
+
+A estratégia permite reutilizar um ranking calculado anteriormente sem executar novamente todo o processamento de recomendação a cada acesso do usuário.
+
+A atualização do ranking ocorre de acordo com o tempo de expiração configurado no sistema principal.
+
+### Indisponibilidade do serviço
+
+A indisponibilidade do serviço de recomendação não deve impedir a utilização das páginas principais do Trocabook.
+
+O sistema principal possui estratégias de fallback para esses casos.
+
+Na **Home**, caso não seja possível obter um ranking personalizado, são apresentados anúncios aleatórios.
+
+Na página de **Livros**, caso o serviço esteja indisponível, a lista completa de anúncios continua sendo apresentada utilizando sua ordenação original.
+
+Dessa forma, o sistema de recomendação funciona como um recurso adicional de personalização sem se tornar um ponto obrigatório para o funcionamento do catálogo.
+
+### Utilização das recomendações
+
+As recomendações são utilizadas atualmente em dois contextos principais.
+
+#### Home
+
+A Home apresenta uma quantidade limitada de anúncios recomendados ao usuário.
+
+O ranking retornado pelo serviço é utilizado para selecionar os anúncios com maior score.
+
+#### Catálogo de livros
+
+Na página de Livros, todos os anúncios continuam disponíveis.
+
+O ranking de recomendação é utilizado para reorganizar a listagem, posicionando primeiro os anúncios presentes no ranking personalizado.
+
+Os anúncios que não fazem parte do ranking continuam sendo exibidos após os itens recomendados.
+
+Essa estratégia permite personalizar a navegação sem remover opções do catálogo.
 
 ---
 
 ## Evoluções Planejadas
 
-Algumas funcionalidades poderão ser adicionadas durante a evolução do serviço:
+Algumas melhorias poderão ser avaliadas durante a evolução do serviço:
 
-- integração do serviço com o sistema principal do Trocabook;
-- validação do algoritmo utilizando dados reais;
+- validação do algoritmo utilizando um volume maior de dados reais;
 - avaliação experimental dos pesos utilizados nas interações;
 - avaliação dos pesos utilizados para categorias e autores;
 - utilização de métricas específicas para sistemas de recomendação;
-- expansão da influência das pesquisas para considerar outras características além das categorias;
-- estratégia de recomendação para usuários sem histórico de interações;
+- avaliação de estratégias específicas para usuários sem histórico de interações;
 - controle da quantidade de anúncios referentes ao mesmo livro no ranking;
-- utilização futura da avaliação dos vendedores como critério de seleção entre anúncios do mesmo livro.
+- utilização futura da avaliação dos vendedores como critério adicional de seleção entre anúncios do mesmo livro;
+- avaliação de novas características que possam contribuir para a personalização das recomendações.
 
-Essas funcionalidades serão implementadas e avaliadas conforme a disponibilidade de dados reais da plataforma.
+Essas funcionalidades poderão ser implementadas e avaliadas conforme a disponibilidade de dados e a evolução da plataforma.
 
 ---
 
@@ -555,6 +630,7 @@ Até o momento:
 - [x] Similaridade do cosseno;
 - [x] Ranking baseado nas interações do usuário;
 - [x] Influência de pesquisas no ranking;
+- [x] Pesquisa considerando título, autores e categorias;
 - [x] Implementação dos modelos da API;
 - [x] Implementação dos contratos de Request e Response;
 - [x] Implementação do serviço de recomendação;
@@ -564,8 +640,13 @@ Até o momento:
 - [x] Criação do endpoint REST de recomendação;
 - [x] Testes automatizados do serviço e do adapter;
 - [x] Testes automatizados do endpoint REST;
-- [ ] Integração com o Trocabook;
-- [ ] Validação com dados reais.
+- [x] Teste da influência de pesquisa por título;
+- [x] Integração com o sistema principal do Trocabook;
+- [x] Utilização das recomendações na Home;
+- [x] Ordenação personalizada do catálogo de livros;
+- [x] Cache das recomendações no sistema principal;
+- [x] Fallback em caso de indisponibilidade do serviço de recomendação;
+- [ ] Validação do algoritmo com um volume maior de dados reais.
 
 ---
 
