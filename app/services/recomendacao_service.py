@@ -1,3 +1,7 @@
+"""
+Módulo de serviço responsável pela lógica de recomendação de anúncios.
+"""
+
 import logging
 
 import numpy as np
@@ -16,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class RecomendacaoService:
+    """
+    Serviço responsável por gerar recomendações de anúncios com base nas interações e similaridades de itens.
+    """
 
     PESOS_INTERACOES = {
         "PESQUISA": 0.5,
@@ -32,6 +39,20 @@ class RecomendacaoService:
             anuncios: list[Anuncio],
             interacoes: list[Interacao]
     ):
+        """
+        Gera o ranking de anúncios recomendados para o usuário informado.
+
+        Args:
+            uid_usuario: Identificador único do usuário alvo da recomendação.
+            anuncios: Lista de anúncios candidatos disponíveis no sistema.
+            interacoes: Histórico de interações registradas na plataforma.
+
+        Returns:
+            DataFrame do Pandas contendo os anúncios recomendados ordenados por score decrescente.
+
+        Raises:
+            RecomendacaoException: Se ocorrer qualquer erro inesperado durante o cálculo das recomendações.
+        """
         logger.info(
             "Iniciando recomendação para usuário %s. "
             "Anúncios recebidos: %d. Interações recebidas: %d.",
@@ -181,7 +202,15 @@ class RecomendacaoService:
         self,
         anuncios: list[Anuncio]
     ) -> pd.DataFrame:
+        """
+        Converte a lista de anúncios em um DataFrame do Pandas para processamento dos dados.
 
+        Args:
+            anuncios: Lista de objetos Anuncio a serem convertidos.
+
+        Returns:
+            DataFrame contendo os dados estruturados dos anúncios.
+        """
         logger.debug(
             "Convertendo %d anúncios para DataFrame.",
             len(anuncios)
@@ -217,7 +246,15 @@ class RecomendacaoService:
         self,
         interacoes: list[Interacao]
     ) -> pd.DataFrame:
+        """
+        Converte a lista de interações em um DataFrame do Pandas.
 
+        Args:
+            interacoes: Lista de objetos Interacao a serem convertidos.
+
+        Returns:
+            DataFrame com os registros das interações estruturados.
+        """
         logger.debug(
             "Convertendo %d interações para DataFrame.",
             len(interacoes)
@@ -262,6 +299,16 @@ class RecomendacaoService:
         dados,
         tipo_dado: str
     ):
+        """
+        Gera a matriz TF-IDF e o vetorizador correspondente para uma série de dados textuais.
+
+        Args:
+            dados: Série ou coleção textual a ser vetorizada.
+            tipo_dado: Nome descritivo do tipo de dado textual para fins de log.
+
+        Returns:
+            Tupla contendo a matriz TF-IDF e o vetorizador treinado, ou (None, None) caso não haja texto válido.
+        """
         logger.debug(
             "Iniciando vetorização TF-IDF de %s.",
             tipo_dado
@@ -303,6 +350,16 @@ class RecomendacaoService:
         matriz_categorias,
         matriz_autores
     ):
+        """
+        Calcula a matriz de similaridade de cosseno combinando pesos de categorias e autores.
+
+        Args:
+            matriz_categorias: Matriz TF-IDF referente às categorias, ou None se indisponível.
+            matriz_autores: Matriz TF-IDF referente aos autores, ou None se indisponível.
+
+        Returns:
+            Matriz de similaridades ponderada, ou None se ambos forem indisponíveis.
+        """
         logger.debug(
             "Iniciando cálculo das similaridades."
         )
@@ -384,6 +441,17 @@ class RecomendacaoService:
         uid_usuario,
         tipo_interacao=None
     ):
+        """
+        Filtra as interações de um usuário específico, opcionalmente filtrando por tipo de interação.
+
+        Args:
+            interacoes: DataFrame contendo todas as interações.
+            uid_usuario: Identificador do usuário.
+            tipo_interacao: Tipo específico de interação a filtrar (opcional).
+
+        Returns:
+            DataFrame contendo apenas as interações filtradas do usuário.
+        """
         logger.debug(
             "Buscando interações do usuário %s. Tipo: %s.",
             uid_usuario,
@@ -415,6 +483,15 @@ class RecomendacaoService:
         self,
         interacoes_usuario
     ):
+        """
+        Filtra as interações do usuário que possuem referência direta a um livro.
+
+        Args:
+            interacoes_usuario: DataFrame contendo as interações do usuário.
+
+        Returns:
+            DataFrame com interações que possuem uidLivro preenchido.
+        """
         logger.debug(
             "Filtrando interações associadas diretamente "
             "a livros."
@@ -438,6 +515,15 @@ class RecomendacaoService:
         self,
         interacoes_livros
     ):
+        """
+        Agrega o peso total das interações por livro para calcular o nível de interesse do usuário.
+
+        Args:
+            interacoes_livros: DataFrame das interações do usuário associadas a livros.
+
+        Returns:
+            DataFrame contendo os livros e a soma ponderada de interesse de cada um.
+        """
         logger.debug(
             "Calculando interesse agregado por livro "
             "a partir de %d interações.",
@@ -464,6 +550,17 @@ class RecomendacaoService:
         interesses,
         similaridades
     ):
+        """
+        Calcula os scores dos anúncios baseando-se no interesse prévio do usuário e na similaridade entre itens.
+
+        Args:
+            anuncios: DataFrame de anúncios disponíveis.
+            interesses: DataFrame com os livros de interesse do usuário e seus pesos.
+            similaridades: Matriz de similaridade de cosseno entre anúncios.
+
+        Returns:
+            Array NumPy com a pontuação acumulada para cada anúncio.
+        """
         logger.debug(
             "Calculando scores baseados em %d "
             "livros de interesse.",
@@ -512,6 +609,18 @@ class RecomendacaoService:
             vectorizer_pesquisa,
             matriz_pesquisa
     ):
+        """
+        Calcula scores adicionais para os anúncios a partir da similaridade com termos de pesquisa do usuário.
+
+        Args:
+            pesquisas: DataFrame contendo as interações de pesquisa do usuário.
+            anuncios: DataFrame de anúncios disponíveis.
+            vectorizer_pesquisa: Vetorizador TF-IDF ajustado sobre o conteúdo de pesquisa.
+            matriz_pesquisa: Matriz TF-IDF correspondente ao conteúdo de pesquisa dos anúncios.
+
+        Returns:
+            Array NumPy com a pontuação calculada baseada nas pesquisas.
+        """
         logger.debug(
             "Calculando influência de %d pesquisas "
             "nos scores.",
@@ -584,6 +693,18 @@ class RecomendacaoService:
         livros_interagidos,
         uid_usuario
     ):
+        """
+        Aplica os filtros de negócio (itens já interagidos, anúncios próprios e score zerado) e ordena o ranking.
+
+        Args:
+            anuncios: DataFrame dos anúncios candidatos.
+            scores: Pontuações calculadas para cada anúncio.
+            livros_interagidos: Lista de livros com os quais o usuário já interagiu.
+            uid_usuario: Identificador do usuário solicitante.
+
+        Returns:
+            DataFrame de anúncios recomendados ordenado por score de forma decrescente.
+        """
         logger.debug(
             "Iniciando montagem do ranking. "
             "Anúncios candidatos: %d. "
@@ -655,6 +776,12 @@ class RecomendacaoService:
     def _criar_ranking_vazio(
         self
     ):
+        """
+        Gera uma estrutura vazia de DataFrame com o esquema de colunas esperado para o ranking.
+
+        Returns:
+            DataFrame vazio com as colunas definidas do ranking.
+        """
         logger.debug(
             "Criando estrutura de ranking vazio."
         )

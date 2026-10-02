@@ -1,3 +1,7 @@
+"""
+Ponto de entrada da aplicação FastAPI do serviço de recomendação.
+"""
+
 import logging
 
 from fastapi import FastAPI, Request
@@ -23,6 +27,16 @@ async def recomendacao_exception_handler(
     request: Request,
     exc: RecomendacaoException
 ):
+    """
+    Manipula exceções do tipo RecomendacaoException retornando resposta HTTP 500 padronizada.
+
+    Args:
+        request: Objeto de requisição HTTP do FastAPI.
+        exc: Instância da exceção RecomendacaoException capturada.
+
+    Returns:
+        JSONResponse com status code 500 e mensagem de detalhe do erro.
+    """
     return JSONResponse(
         status_code=500,
         content={
@@ -33,6 +47,9 @@ async def recomendacao_exception_handler(
 
 @app.get("/")
 def root():
+    """
+    Retorna uma mensagem de status e identificação do serviço.
+    """
     return {
         "message": "Trocabook - Serviço de Recomendação"
     }

@@ -1,3 +1,7 @@
+"""
+Módulo do controller de recomendações da API.
+"""
+
 from fastapi import APIRouter
 
 from app.adapters.recomendacao_adapter import RecomendacaoAdapter
@@ -21,6 +25,15 @@ recomendacao_service = RecomendacaoService()
 def recomendar(
     request: RecomendacaoRequest
 ) -> list[RecomendacaoResponse]:
+    """
+    Recebe os dados do usuário, anúncios e interações para retornar uma lista ordenada de recomendações.
+
+    Args:
+        request: Objeto de requisição contendo o identificador do usuário, a lista de anúncios e as interações.
+
+    Returns:
+        Lista de anúncios recomendados com seus respectivos scores calculados.
+    """
 
     ranking = recomendacao_service.recomendar(
         uid_usuario=request.uidUsuario,
