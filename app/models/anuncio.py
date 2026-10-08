@@ -16,3 +16,4 @@ class Anuncio(BaseModel):
     autores: list[str]
     categorias: list[str]
     tipoNegociacao: str
+    status: str

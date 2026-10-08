@@ -18,7 +18,8 @@ def test_deve_retornar_recomendacoes():
                 "titulo": "Harry Potter e a Pedra Filosofal",
                 "autores": ["J. K. Rowling"],
                 "categorias": ["fantasia", "aventura"],
-                "tipoNegociacao": "TROCA"
+                "tipoNegociacao": "TROCA",
+                "status": "ATIVO"
             },
             {
                 "id": "A2",
@@ -27,7 +28,8 @@ def test_deve_retornar_recomendacoes():
                 "titulo": "Harry Potter e a Câmara Secreta",
                 "autores": ["J. K. Rowling"],
                 "categorias": ["fantasia", "aventura"],
-                "tipoNegociacao": "VENDA"
+                "tipoNegociacao": "VENDA",
+                "status": "ATIVO"
             }
         ],
         "interacoes": [
@@ -109,7 +111,8 @@ def test_deve_retornar_500_quando_ocorrer_erro_na_recomendacao(
                 "titulo": "Livro 1",
                 "autores": ["Autor A"],
                 "categorias": ["fantasia"],
-                "tipoNegociacao": "TROCA"
+                "tipoNegociacao": "TROCA",
+                "status": "ATIVO"
             }
         ],
         "interacoes": []

@@ -229,7 +229,8 @@ class RecomendacaoService:
                 ),
                 "categorias": " ".join(
                     anuncio.categorias or []
-                )
+                ),
+                "status": anuncio.status
             })
 
         dataframe = pd.DataFrame(dados)
@@ -694,8 +695,9 @@ class RecomendacaoService:
         uid_usuario
     ):
         """
-        Aplica os filtros de negócio (itens já interagidos, anúncios próprios e score zerado) e ordena o ranking.
-
+        Aplica os filtros de negócio
+        (anúncios ativos, itens já interagidos, anúncios próprios e score zerado)
+        e ordena o ranking.
         Args:
             anuncios: DataFrame dos anúncios candidatos.
             scores: Pontuações calculadas para cada anúncio.
@@ -718,6 +720,15 @@ class RecomendacaoService:
         ranking["score"] = scores
 
         quantidade_inicial = len(ranking)
+
+        ranking = ranking[
+            ranking["status"] == "ATIVO"
+            ]
+
+        logger.debug(
+            "Removidos %d anúncios não ativos do ranking.",
+            quantidade_inicial - len(ranking)
+        )
 
         ranking = ranking[
             ~ranking["uidLivro"].isin(

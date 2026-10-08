@@ -15,7 +15,8 @@ def criar_anuncios():
             titulo="Harry Potter e a Pedra Filosofal",
             autores=["J. K. Rowling"],
             categorias=["fantasia", "aventura"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A2",
@@ -24,7 +25,8 @@ def criar_anuncios():
             titulo="Harry Potter e a Câmara Secreta",
             autores=["J. K. Rowling"],
             categorias=["fantasia", "aventura"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A3",
@@ -33,7 +35,8 @@ def criar_anuncios():
             titulo="O Hobbit",
             autores=["J. R. R. Tolkien"],
             categorias=["fantasia", "aventura"],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A4",
@@ -42,7 +45,8 @@ def criar_anuncios():
             titulo="Dom Casmurro",
             autores=["Machado de Assis"],
             categorias=["romance", "literatura brasileira"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A5",
@@ -51,7 +55,8 @@ def criar_anuncios():
             titulo="Clean Code",
             autores=["Robert Martin"],
             categorias=["programacao", "tecnologia"],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         )
     ]
 
@@ -139,7 +144,8 @@ def test_nao_deve_recomendar_anuncio_do_proprio_usuario():
             titulo="Outro Livro de Fantasia",
             autores=["Autor Teste"],
             categorias=["fantasia", "aventura"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         )
     )
 
@@ -212,7 +218,8 @@ def test_deve_tratar_anuncios_sem_autores_e_categorias():
             titulo="Livro 1",
             autores=[],
             categorias=[],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A2",
@@ -221,7 +228,8 @@ def test_deve_tratar_anuncios_sem_autores_e_categorias():
             titulo="Livro 2",
             autores=[],
             categorias=[],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         )
     ]
 
@@ -255,7 +263,8 @@ def test_deve_recomendar_quando_somente_categorias_estiverem_disponiveis():
             titulo="Livro 1",
             autores=[],
             categorias=["fantasia"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A2",
@@ -264,7 +273,8 @@ def test_deve_recomendar_quando_somente_categorias_estiverem_disponiveis():
             titulo="Livro 2",
             autores=[],
             categorias=["fantasia"],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A3",
@@ -273,7 +283,8 @@ def test_deve_recomendar_quando_somente_categorias_estiverem_disponiveis():
             titulo="Livro 3",
             autores=[],
             categorias=["tecnologia"],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         )
     ]
 
@@ -307,7 +318,8 @@ def test_deve_recomendar_quando_somente_autores_estiverem_disponiveis():
             titulo="Livro 1",
             autores=["Autor A"],
             categorias=[],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A2",
@@ -316,7 +328,8 @@ def test_deve_recomendar_quando_somente_autores_estiverem_disponiveis():
             titulo="Livro 2",
             autores=["Autor A"],
             categorias=[],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A3",
@@ -325,7 +338,8 @@ def test_deve_recomendar_quando_somente_autores_estiverem_disponiveis():
             titulo="Livro 3",
             autores=["Autor B"],
             categorias=[],
-            tipoNegociacao="VENDA"
+            tipoNegociacao="VENDA",
+            status="ATIVO"
         )
     ]
 
@@ -361,7 +375,8 @@ def test_deve_lancar_recomendacao_exception_quando_ocorrer_erro_inesperado(
             titulo="Livro 1",
             autores=["Autor A"],
             categorias=["fantasia"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         )
     ]
 
@@ -394,7 +409,8 @@ def test_pesquisa_por_titulo_deve_influenciar_recomendacao():
             titulo="Harry Potter e a Pedra Filosofal",
             autores=["J. K. Rowling"],
             categorias=["Fantasia"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         ),
         Anuncio(
             id="A2",
@@ -403,7 +419,8 @@ def test_pesquisa_por_titulo_deve_influenciar_recomendacao():
             titulo="Dom Casmurro",
             autores=["Machado de Assis"],
             categorias=["Literatura Brasileira"],
-            tipoNegociacao="TROCA"
+            tipoNegociacao="TROCA",
+            status="ATIVO"
         )
     ]
 
@@ -423,4 +440,75 @@ def test_pesquisa_por_titulo_deve_influenciar_recomendacao():
 
     assert len(ranking) == 1
     assert ranking.iloc[0]["id"] == "A1"
+    assert ranking.iloc[0]["score"] > 0
+
+def test_nao_deve_recomendar_anuncio_finalizado():
+    service = RecomendacaoService()
+
+    anuncios = criar_anuncios()
+
+    anuncios[1] = Anuncio(
+        id="A2",
+        uidLivro="L2",
+        uidUsuario="V2",
+        titulo="Harry Potter e a Câmara Secreta",
+        autores=["J. K. Rowling"],
+        categorias=["fantasia", "aventura"],
+        tipoNegociacao="TROCA",
+        status="FINALIZADO"
+    )
+
+    ranking = service.recomendar(
+        uid_usuario="U1",
+        anuncios=anuncios,
+        interacoes=criar_interacoes()
+    )
+
+    assert "A2" not in ranking["id"].values
+
+def test_anuncio_finalizado_deve_participar_do_calculo_mas_nao_do_ranking():
+    service = RecomendacaoService()
+
+    anuncios = [
+        Anuncio(
+            id="A1",
+            uidLivro="L1",
+            uidUsuario="V1",
+            titulo="Livro Finalizado",
+            autores=["Autor Fantasia"],
+            categorias=["fantasia"],
+            tipoNegociacao="TROCA",
+            status="FINALIZADO"
+        ),
+        Anuncio(
+            id="A2",
+            uidLivro="L2",
+            uidUsuario="V2",
+            titulo="Livro Ativo Semelhante",
+            autores=["Autor Fantasia"],
+            categorias=["fantasia"],
+            tipoNegociacao="TROCA",
+            status="ATIVO"
+        )
+    ]
+
+    interacoes = [
+        Interacao(
+            uidUsuario="U1",
+            tipoInteracao=TipoInteracao.VISUALIZACAO,
+            uidLivro="L1",
+            uidAnuncio="A1",
+            termoPesquisa=None
+        )
+    ]
+
+    ranking = service.recomendar(
+        uid_usuario="U1",
+        anuncios=anuncios,
+        interacoes=interacoes
+    )
+
+    assert "A1" not in ranking["id"].values
+    assert "A2" in ranking["id"].values
+    assert ranking.iloc[0]["id"] == "A2"
     assert ranking.iloc[0]["score"] > 0

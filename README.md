@@ -43,9 +43,13 @@ O processo segue as seguintes etapas:
 5. Construção do perfil de interesse do usuário;
 6. Análise dos termos pesquisados pelo usuário;
 7. Cálculo do score de recomendação;
-8. Remoção dos livros com os quais o usuário já interagiu diretamente;
-9. Remoção dos anúncios pertencentes ao próprio usuário;
-10. Ordenação dos anúncios pelo score obtido.
+8. Remoção dos anúncios finalizados do ranking final;
+9. Remoção dos livros com os quais o usuário já interagiu diretamente;
+10. Remoção dos anúncios pertencentes ao próprio usuário;
+11. Remoção dos anúncios sem score positivo;
+12. Ordenação dos anúncios pelo score obtido.
+
+Os anúncios com status `FINALIZADO` podem participar das etapas de processamento e cálculo das recomendações como dados históricos. Entretanto, somente anúncios com status `ATIVO` podem compor o ranking final retornado pelo serviço.
 
 ### Características dos livros
 
@@ -109,7 +113,7 @@ POST /recomendacoes
 A requisição recebe:
 
 - `uidUsuario` — identificador do usuário para o qual será gerada a recomendação;
-- `anuncios` — anúncios atualmente disponíveis na plataforma;
+- `anuncios` — anúncios utilizados pelo algoritmo, incluindo anúncios ativos e finalizados que podem contribuir para a identificação dos interesses do usuário;
 - `interacoes` — histórico de interações utilizado para identificar os interesses do usuário.
 
 Exemplo:
@@ -125,7 +129,8 @@ Exemplo:
       "titulo": "Livro 1",
       "autores": ["Autor A"],
       "categorias": ["fantasia"],
-      "tipoNegociacao": "TROCA"
+      "tipoNegociacao": "TROCA",
+      "status": "ATIVO"
     }
   ],
   "interacoes": [
@@ -146,7 +151,9 @@ O processamento da requisição é realizado pelo `RecomendacaoService` e o resu
 
 ## Resultado da Recomendação
 
-O algoritmo gera um ranking de anúncios ordenado pelo score de recomendação calculado para o usuário.
+O algoritmo gera um ranking de anúncios ativos ordenado pelo score de recomendação calculado para o usuário.
+
+Anúncios finalizados podem contribuir para o cálculo das recomendações como dados históricos, mas são removidos antes da construção do ranking final retornado pela API.
 
 Cada item retornado pela API é representado por:
 
@@ -294,7 +301,15 @@ Processamento com Pandas,
 TF-IDF e similaridade
         │
         ▼
-Ranking em DataFrame
+Cálculo dos scores
+        │
+        ▼
+Aplicação dos filtros
+do ranking
+        │
+        ▼
+Ranking de anúncios ativos
+em DataFrame
         │
         ▼
 RecomendacaoAdapter
@@ -367,6 +382,14 @@ Caso nenhum anúncio esteja disponível, o serviço retorna um ranking vazio.
 
 Anúncios pertencentes ao usuário que está recebendo as recomendações são removidos do ranking.
 
+### Anúncios finalizados
+
+Anúncios com status `FINALIZADO` podem ser utilizados durante o cálculo das recomendações como dados históricos, permitindo que interações anteriores continuem contribuindo para a identificação dos interesses do usuário.
+
+Entretanto, somente anúncios com status `ATIVO` podem compor o ranking final retornado pelo serviço.
+
+Dessa forma, um anúncio finalizado pode contribuir para identificar livros semelhantes aos interesses anteriores do usuário sem ser apresentado como uma opção disponível para troca ou venda.
+
 ### Livros já utilizados no histórico de interesse
 
 Livros com os quais o usuário já interagiu diretamente são removidos do ranking final para evitar que o sistema continue recomendando itens que já fizeram parte do histórico utilizado para identificar seus interesses.
@@ -409,6 +432,8 @@ Entre os cenários testados estão:
 - recomendação utilizando somente categorias;
 - recomendação utilizando somente autores;
 - influência de pesquisa por título na recomendação;
+- exclusão de anúncios finalizados do ranking;
+- utilização de anúncios finalizados no cálculo de recomendações sem incluí-los no ranking final;
 - tratamento de erros inesperados pelo `RecomendacaoService`;
 - conversão do ranking para `RecomendacaoResponse`;
 - preservação da ordem do ranking durante a conversão;
@@ -418,12 +443,12 @@ Entre os cenários testados estão:
 - validação de requisições inválidas com status HTTP `422`;
 - tratamento de falhas internas com status HTTP `500`.
 
-Atualmente, a suíte possui **20 testes automatizados**.
+Atualmente, a suíte possui **22 testes automatizados**.
 
 A execução atual da suíte apresenta:
 
 ```text
-20 passed
+22 passed
 ```
 
 Para executar todos os testes:
@@ -447,7 +472,7 @@ O projeto utiliza:
 - Jupyter Notebook;
 - Uvicorn;
 - Pytest;
-- HTTPX2 para suporte aos testes da API com `TestClient`.
+- HTTPX para suporte aos testes da API com `TestClient`.
 
 ---
 
@@ -456,7 +481,7 @@ O projeto utiliza:
 ### 1. Clone o repositório
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/PedroAmaralMa/trocabook-recomendacao-service.git
 ```
 
 Entre no diretório:
@@ -549,10 +574,12 @@ dos anúncios
 O Spring Boot envia ao serviço de recomendação:
 
 - identificador do usuário;
-- anúncios disponíveis;
+- anúncios ativos e finalizados necessários ao cálculo da recomendação;
 - histórico de interações do usuário.
 
-O serviço Python processa essas informações e retorna apenas o ranking contendo o identificador dos anúncios e seus respectivos scores.
+Os anúncios finalizados podem contribuir para a identificação dos interesses do usuário a partir de dados históricos, porém são removidos do ranking final pelo serviço de recomendação.
+
+O serviço Python processa essas informações e retorna apenas o ranking contendo o identificador dos anúncios ativos recomendados e seus respectivos scores.
 
 Dessa forma, o serviço de recomendação não acessa diretamente o **Firebase**, mantendo a responsabilidade pela persistência no sistema principal.
 
@@ -590,13 +617,13 @@ O ranking retornado pelo serviço é utilizado para selecionar os anúncios com 
 
 #### Catálogo de livros
 
-Na página de Livros, todos os anúncios continuam disponíveis.
+Na página de Livros, todos os anúncios ativos continuam disponíveis.
 
 O ranking de recomendação é utilizado para reorganizar a listagem, posicionando primeiro os anúncios presentes no ranking personalizado.
 
-Os anúncios que não fazem parte do ranking continuam sendo exibidos após os itens recomendados.
+Os anúncios ativos que não fazem parte do ranking continuam sendo exibidos após os itens recomendados.
 
-Essa estratégia permite personalizar a navegação sem remover opções do catálogo.
+Essa estratégia permite personalizar a navegação sem remover opções disponíveis do catálogo.
 
 ---
 
@@ -641,6 +668,8 @@ Até o momento:
 - [x] Testes automatizados do serviço e do adapter;
 - [x] Testes automatizados do endpoint REST;
 - [x] Teste da influência de pesquisa por título;
+- [x] Tratamento de anúncios ativos e finalizados no sistema de recomendação;
+- [x] Testes do comportamento de anúncios finalizados no ranking;
 - [x] Integração com o sistema principal do Trocabook;
 - [x] Utilização das recomendações na Home;
 - [x] Ordenação personalizada do catálogo de livros;
